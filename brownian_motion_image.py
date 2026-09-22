@@ -4,6 +4,7 @@ El exponente de Hurst (H) controla la rugosidad del ruido (entre 0 y 1)
 
 Uso:
     python brownian_motion_image.py --width 512 --height 512 --seed 42 --hurst 0.7
+    python brownian_motion_image.py --name mi_imagen --count 5
 """
 
 import argparse
@@ -97,7 +98,14 @@ def parse_args():
         help="Percentil (0-49) a recortar en ambos extremos para aumentar el contraste.",
     )
     parser.add_argument(
-        "--output", type=str, default="brownian_motion.png", help="Ruta del archivo de salida."
+        "--name",
+        type=str,
+        default="brownian_motion",
+        help="Nombre base del archivo de salida. El nombre final será "
+        "'<name><seed de 4 dígitos>.png'.",
+    )
+    parser.add_argument(
+        "--count", type=int, default=1, help="Cantidad de imágenes a generar."
     )
     return parser.parse_args()
 
@@ -107,20 +115,42 @@ def main():
 
     if not (0.0 < args.hurst < 1.0):
         raise ValueError("--hurst debe estar en el intervalo abierto (0, 1).")
+    if args.count < 1:
+        raise ValueError("--count debe ser un entero positivo.")
 
-    field = generate_fbm(
-        args.width,
-        args.height,
-        seed=args.seed,
-        hurst=args.hurst,
-        scale=args.scale,
-    )
-    save_image(field, args.output, percentile_clip=args.percentile_clip)
+    if args.count == 1:
+        seeds = [args.seed if args.seed is not None else int(np.random.default_rng().integers(0, 10_000))]
+    else:
+        # --seed solo siembra el sorteo de semillas del lote; cada imagen
+        # recibe una semilla propia, no consecutiva.
+        seed_rng = np.random.default_rng(args.seed)
+        used_seeds = set()
+        seeds = []
+        for _ in range(args.count):
+            seed = int(seed_rng.integers(0, 10_000))
+            while seed in used_seeds:
+                seed = int(seed_rng.integers(0, 10_000))
+            used_seeds.add(seed)
+            seeds.append(seed)
 
-    print(
-        f"Imagen guardada en {args.output} "
-        f"({args.width}x{args.height}, seed={args.seed}, hurst={args.hurst}, scale={args.scale})"
-    )
+    hurst_suffix = int(round(args.hurst * 100))
+
+    for seed in seeds:
+        output_path = f"{args.name}{seed % 10_000:04d}_H{hurst_suffix:02d}.png"
+
+        field = generate_fbm(
+            args.width,
+            args.height,
+            seed=seed,
+            hurst=args.hurst,
+            scale=args.scale,
+        )
+        save_image(field, output_path, percentile_clip=args.percentile_clip)
+
+        print(
+            f"Imagen guardada en {output_path} "
+            f"({args.width}x{args.height}, seed={seed}, hurst={args.hurst}, scale={args.scale})"
+        )
 
 
 if __name__ == "__main__":
