@@ -4,10 +4,11 @@ El exponente de Hurst (H) controla la rugosidad del ruido (entre 0 y 1)
 
 Uso:
     python brownian_motion_image.py --width 512 --height 512 --seed 42 --hurst 0.7
-    python brownian_motion_image.py --name mi_imagen --count 5
+    python brownian_motion_image.py --name mi_imagen --count 5 --dir imagenes
 """
 
 import argparse
+import os
 
 import numpy as np
 from PIL import Image
@@ -105,6 +106,12 @@ def parse_args():
         "'<name><seed de 4 dígitos>.png'.",
     )
     parser.add_argument(
+        "--dir",
+        type=str,
+        default=".",
+        help="Directorio donde se guardan las imágenes (se crea si no existe).",
+    )
+    parser.add_argument(
         "--count", type=int, default=1, help="Cantidad de imágenes a generar."
     )
     return parser.parse_args()
@@ -134,9 +141,11 @@ def main():
             seeds.append(seed)
 
     hurst_suffix = int(round(args.hurst * 100))
+    os.makedirs(args.dir, exist_ok=True)
 
     for seed in seeds:
-        output_path = f"{args.name}{seed % 10_000:04d}_H{hurst_suffix:02d}.png"
+        filename = f"{args.name}{seed % 10_000:04d}_H{hurst_suffix:02d}.png"
+        output_path = os.path.join(args.dir, filename)
 
         field = generate_fbm(
             args.width,
