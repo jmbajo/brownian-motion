@@ -2,7 +2,7 @@
 
 Uso:
     python gen_demo_imgs.py
-    python gen_demo_imgs.py --dir demo --size 256
+    python gen_demo_imgs.py --dir demo --size 256 --seed 1234
 """
 
 import argparse
@@ -18,6 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description="Genera imágenes fBm de demo.")
     parser.add_argument("--dir", type=str, default="demo_imgs", help="Directorio de salida.")
     parser.add_argument("--size", type=int, default=256, help="Tamaño (cuadrado) de imagen")
+    parser.add_argument("--seed", type=int, default=5467, help="Seed")
     args = parser.parse_args()
 
     for hurst in HURST_VALUES:
@@ -25,7 +26,7 @@ def main():
                "--hurst", str(hurst),
                "--dir", args.dir,
                "--count", "100",
-               "--seed", "5467",
+               "--seed", str(args.seed),
                "--width", str(args.size),
                "--height", str(args.size)]
 
